@@ -1,0 +1,36 @@
+#!/usr/bin/bash
+
+COMMAND="$1"
+KERNEL_VERSION="$2"
+KDUMP_INITRD_DIR_ABS="$3"
+KERNEL_IMAGE="$4"
+
+if ! [[ ${KERNEL_INSTALL_MACHINE_ID-x} ]]; then
+    exit 0
+fi
+
+if [[ -d "$KDUMP_INITRD_DIR_ABS" ]]; then
+    KDUMP_INITRD="initrdkdump"
+else
+    # If `KDUMP_BOOTDIR` is not writable, then the kdump
+    # initrd must have been placed at `/var/lib/kdump`
+    if [[ ! -w "/boot" ]]; then
+        KDUMP_INITRD_DIR_ABS="/var/lib/kdump"
+    else
+        KDUMP_INITRD_DIR_ABS="/boot"
+    fi
+    KDUMP_INITRD="initramfs-${KERNEL_VERSION}kdump.img"
+fi
+
+ret=0
+case "$COMMAND" in
+    add)
+        # Do nothing, kdump initramfs is strictly host only
+        # and managed by kdump service
+        ;;
+    remove)
+        rm -f -- "$KDUMP_INITRD_DIR_ABS/$KDUMP_INITRD"
+        ret=$?
+        ;;
+esac
+exit $ret

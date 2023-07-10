@@ -1,0 +1,51 @@
+From ce720608d5933e62f77f2c2f216859cf4f06adf8 Mon Sep 17 00:00:00 2001
+From: Kairui Song <kasong@redhat.com>
+Date: Wed, 13 Feb 2019 00:03:51 +0800
+Subject: [PATCH] Fix eppic issue with hardening flags
+
+This is stash of two commits:
+
+commit f98cf5fe07f390554696755f0a5843f6bb9c4716
+Author: ryncsn <ryncsn@gmail.com>
+Date:   Tue Mar 19 13:39:25 2019 +0800
+
+    Tell gcc not to omit frame pointer
+
+    After commit 0209874, it's now possible to enable optimization above O0.
+    But eppic might call __builtin_return_address(1). With O1,
+    -fomit-frame-pointer is enabled gcc may omit frame pointer.
+    __builtin_return_address(1) relies on callee preserves RBP as the stack
+    base, which is untrue if optimization is usded. In this case it may return
+    wrong value or crash.
+
+    In case of any potential failure, use -fno-omit-frame-pointer globally.
+
+    Signed-off-by: Kairui Song <ryncsn@gmail.com>
+
+commit 0209874f4b46b8af5a2d42662ba6775cf5a1dc44
+Author: Kairui Song <kasong@redhat.com>
+Date:   Wed Feb 13 00:03:51 2019 +0800
+
+    Drop O0 CFLAGS override in Makefile
+
+Signed-off-by: Kairui Song <kasong@redhat.com>
+---
+ libeppic/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libeppic/Makefile b/libeppic/Makefile
+index bcf2edf..8b97c87 100644
+--- a/eppic/libeppic/Makefile
++++ b/eppic/libeppic/Makefile
+@@ -24,7 +24,7 @@ LDIRT    = lex.eppic.c lex.eppicpp.c eppic.tab.c eppic.tab.h eppicpp.tab.c \
+ LIBDIR	 = /usr/lib
+ TARGETS  = libeppic.a
+ 
+-CFLAGS += -O0 -g -fPIC
++CFLAGS += -g -fno-omit-frame-pointer -fPIC
+ ifeq ($(TARGET), PPC64)
+ 	CFLAGS += -m64
+ endif
+-- 
+2.20.1
+
